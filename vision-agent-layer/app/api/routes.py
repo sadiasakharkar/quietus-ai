@@ -12,12 +12,19 @@ router = APIRouter()
 
 @router.get("/health")
 def health() -> dict:
-    return {"status": "ok", "service": "vision-agent-layer"}
+    return {
+        "status": "ok",
+        "service": "vision-agent-layer",
+        "modelLoaded": get_video_processor.cache_info().currsize > 0,
+    }
 
 
 @router.get("/v1/models")
 def models() -> dict:
-    processor = get_video_processor()
+    try:
+        processor = get_video_processor()
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=503, detail=f"Vision models unavailable: {exc}") from exc
     return {
         "vision": {
             "faceDetector": "YOLO",
@@ -44,7 +51,10 @@ async def analyze_video(
     if file_size_mb > settings.vision_max_file_size_mb:
         raise HTTPException(status_code=413, detail="Uploaded video exceeds size limit")
 
-    processor = get_video_processor()
+    try:
+        processor = get_video_processor()
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=503, detail=f"Vision models unavailable: {exc}") from exc
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as temp_file:
         temp_file.write(contents)

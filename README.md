@@ -50,9 +50,14 @@ quietus-ai/
 1. Copy `infra/docker/.env.example` to `infra/docker/.env`
 2. Configure secrets/keys
 3. Run `docker compose up --build` from `infra/docker`
+4. Place YOLO weights at `vision-agent-layer/models/yolov8n-face.pt`
 
 ## Constraints
 1. No dummy data
 2. No mock AI
 3. Real open-source models only
 4. LLM used only for reasoning/explanation, not raw detection
+
+## Current Runtime Status
+1. `backend`, `vision-agent-layer`, `audio-service`, `frontend` are implemented and runnable.
+2. `nlp-service` is included as a runnable service skeleton (health + explicit `501` for analysis endpoint) to keep Docker Compose startup clean until full NLP phase implementation.

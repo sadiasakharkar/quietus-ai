@@ -37,3 +37,4 @@
 ## Phase 8: Dockerization and demo optimization
 1. Final container orchestration.
 2. Performance tuning to 5-8s response target.
+3. Service health checks, restart policies, and clean startup behavior.

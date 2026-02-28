@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -17,6 +15,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   backend:
     build:
@@ -29,6 +28,7 @@ services:
         condition: service_healthy
     ports:
       - "8080:8080"
+    restart: unless-stopped
 
   vision-agent-layer:
     build:
@@ -40,6 +40,13 @@ services:
       - ../../vision-agent-layer/models:/app/models
     ports:
       - "8100:8100"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8100/health', timeout=2)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   audio-service:
     build:
@@ -49,6 +56,13 @@ services:
       - .env
     ports:
       - "8200:8200"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8200/health', timeout=2)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
 
   nlp-service:
     build:
@@ -58,6 +72,13 @@ services:
       - .env
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    restart: unless-stopped
 
   frontend:
     build:
@@ -69,6 +90,7 @@ services:
       - backend
     ports:
       - "5173:80"
+    restart: unless-stopped
 
 volumes:
   postgres_data:

@@ -12,12 +12,19 @@ router = APIRouter()
 
 @router.get("/health")
 def health() -> dict:
-    return {"status": "ok", "service": "audio-service"}
+    return {
+        "status": "ok",
+        "service": "audio-service",
+        "modelLoaded": get_audio_processor.cache_info().currsize > 0,
+    }
 
 
 @router.get("/v1/models")
 def models() -> dict:
-    processor = get_audio_processor()
+    try:
+        processor = get_audio_processor()
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=503, detail=f"Audio model unavailable: {exc}") from exc
     return {
         "audio": {
             "serModel": processor.model_version,
@@ -42,7 +49,10 @@ async def analyze_audio(
     if size_mb > settings.audio_max_file_size_mb:
         raise HTTPException(status_code=413, detail="Uploaded audio exceeds size limit")
 
-    processor = get_audio_processor()
+    try:
+        processor = get_audio_processor()
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=503, detail=f"Audio model unavailable: {exc}") from exc
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as temp_file:
         temp_file.write(contents)
