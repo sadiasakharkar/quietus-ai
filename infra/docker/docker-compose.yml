@@ -1,0 +1,67 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: quietus-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend-api:
+    build:
+      context: ../../backend
+    container_name: quietus-backend
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-service:
+        condition: service_started
+      vision-agent-service:
+        condition: service_started
+    ports:
+      - "8080:8080"
+
+  ai-service:
+    build:
+      context: ../../ai-service
+    container_name: quietus-ai-service
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+
+  vision-agent-service:
+    build:
+      context: ../../vision-agent-service
+    container_name: quietus-vision-agent
+    env_file:
+      - .env
+    ports:
+      - "8100:8100"
+
+  frontend:
+    build:
+      context: ../../frontend
+    container_name: quietus-frontend
+    env_file:
+      - .env
+    depends_on:
+      - backend-api
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_data:
