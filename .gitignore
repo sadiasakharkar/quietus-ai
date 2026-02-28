@@ -9,6 +9,8 @@
 .env
 **/.env
 *.log
+__pycache__/
+*.pyc
 
 # IDE and OS
 .DS_Store
