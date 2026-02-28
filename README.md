@@ -1,141 +1,58 @@
 # Quietus AI
 
-Quietus AI is a production-structured, end-to-end intelligent distress detection and response platform.
-It combines NLP-based text risk analysis with real-time video intelligence using Stream Vision Agents, stores all outcomes in PostgreSQL, and serves dynamic analytics through secure admin APIs.
+Quietus AI is a real-time multimodal emotional distress detection platform.
+It combines video intelligence (Vision Agents), audio emotion signals, and text distress classification into a fused risk score with optional LLM reasoning.
 
-## Vision
-Build a real, demo-ready, scalable system that detects emotional distress from user input (text + live video), classifies risk with confidence, and powers operational insights from real database records.
+## Current Scope
+The project is restarted with a multimodal-first roadmap.
 
-## Core Principles
-- No dummy data or placeholder analytics.
-- No mock AI outputs in production flow.
-- Clean architecture and layered boundaries.
-- Security-first (JWT, RBAC, service-to-service protection).
-- Docker-first local reproducibility.
+Current implementation state:
+1. Phase 1 backend foundation (Spring Boot)
+2. JWT auth and RBAC
+3. Session lifecycle APIs
+4. Multimodal-ready PostgreSQL schema
 
-## System Architecture
+## Architecture
+Services:
+1. `frontend` (React + WebRTC)
+2. `backend` (Spring Boot API Gateway)
+3. `vision-agent-layer` (FastAPI + Vision Agents SDK + YOLO + emotion model)
+4. `audio-service` (FastAPI SER)
+5. `nlp-service` (FastAPI transcription + distress classifier)
+6. `postgres`
 
-### Services
-1. `frontend` - React + Vite + Tailwind (user/admin UI)
-2. `backend-api` - Spring Boot REST API (auth, orchestration, persistence, analytics)
-3. `ai-service` - FastAPI (text model training/inference)
-4. `vision-agent-service` - Stream Vision Agents SDK (real-time video inference)
-5. `postgres` - PostgreSQL (system of record)
-
-### Communication
-- Frontend -> Backend: HTTPS + JWT
-- Backend -> AI Service: internal HTTP + service token
-- Vision Agent Service -> Backend: internal event ingestion endpoint
-- Backend -> PostgreSQL: transactional persistence + analytics queries
-
-## Technology Stack
-- Frontend: React, Vite, Tailwind CSS
-- Backend: Java, Spring Boot, Spring Security, Flyway
-- AI Text Service: Python, FastAPI, NLP/ML pipeline
-- Vision Service: Stream Vision Agents SDK + compatible vision/LLM models
-- Database: PostgreSQL
-- Infra: Docker, Docker Compose
-
-## Current Repository Status
-This repository is currently in **Phase 1 (Architecture Setup)**.
-
-Completed:
-- High-level architecture and service boundaries
-- Stable API contracts (`v1`)
-- Database schema and indexing strategy
-- Initial migration script
-- Docker Compose and environment skeleton
+Flow:
+1. Client starts session and uploads 20-30 second chunks.
+2. Backend calls vision/audio/nlp services in parallel.
+3. Backend fuses modality scores and stores final risk.
+4. LLM generates structured explanation from modality outputs.
 
 ## Repository Structure
-
 ```text
 quietus-ai/
 ├── README.md
 ├── docs/
-│   ├── architecture.md
-│   ├── api-contracts.md
-│   ├── database-schema.md
-│   └── implementation-roadmap.md
 ├── backend/
-│   └── src/main/resources/db/migration/
-│       └── V1__initial_schema.sql
-├── ai-service/
-├── vision-agent-service/
+├── vision-agent-layer/
+├── audio-service/
+├── nlp-service/
 ├── frontend/
-└── infra/
-    └── docker/
-        ├── docker-compose.yml
-        └── .env.example
+└── infra/docker/
 ```
 
-## Source of Truth Documents
-- Architecture: [`docs/architecture.md`](docs/architecture.md)
-- API contracts: [`docs/api-contracts.md`](docs/api-contracts.md)
-- Database schema: [`docs/database-schema.md`](docs/database-schema.md)
-- Delivery plan: [`docs/implementation-roadmap.md`](docs/implementation-roadmap.md)
+## Source of Truth Docs
+1. `docs/architecture.md`
+2. `docs/api-contracts.md`
+3. `docs/database-schema.md`
+4. `docs/implementation-roadmap.md`
 
-## Data & AI Policy
-- All analytics must be generated from persisted `analysis_records` and `video_analysis_events`.
-- Text model must be trained on a real public distress/mental-health dataset.
-- Model outputs must include confidence and model version metadata.
-- No hardcoded responses for analysis or dashboards.
-
-## Security Model
-- JWT-based stateless authentication
-- Password hashing (bcrypt/argon2)
-- Role-based access control (`USER`, `ADMIN`)
-- Internal service token for AI and Vision service communication
-- Backend-owned authorization boundaries (frontend never trusted for roles)
-
-## Local Development (Planned Runtime)
-
-### Prerequisites
-- Docker Desktop (latest)
-- Docker Compose v2+
-
-### Environment
+## Local Runtime (after services are implemented)
 1. Copy `infra/docker/.env.example` to `infra/docker/.env`
-2. Set secure values for:
-   - `JWT_SECRET`
-   - `INTERNAL_SERVICE_TOKEN`
-   - `STREAM_API_KEY`, `STREAM_API_SECRET`
-   - `OPENAI_API_KEY` and/or `GOOGLE_API_KEY`
+2. Configure secrets/keys
+3. Run `docker compose up --build` from `infra/docker`
 
-### Startup (once services are implemented)
-Run from `infra/docker`:
-```bash
-docker compose up --build
-```
-
-## API Surface (v1)
-- Auth: register/login
-- Text analysis: submit + history
-- Video sessions: create/end
-- Internal ingestion: vision events
-- Admin analytics: overview, distributions, trends
-
-See full contract definitions in [`docs/api-contracts.md`](docs/api-contracts.md).
-
-## Roadmap
-1. Phase 1: Architecture setup (completed)
-2. Phase 2: Backend base (JWT, RBAC, core APIs)
-3. Phase 3: AI text pipeline + inference service
-4. Phase 4: Text + Vision integration
-5. Phase 5: Frontend experiences + admin dashboard
-6. Phase 6: Deployment hardening and E2E validation
-
-## Engineering Standards
-- Layered architecture and modular boundaries
-- Strict request validation + centralized error responses
-- Migration-driven database changes only
-- No unnecessary dependencies
-- Production-oriented logging and observability hooks
-
-## Contribution Workflow
-1. Create a branch prefixed with `codex/` or `feature/`
-2. Implement one phase task at a time
-3. Keep API/schema changes synchronized with `docs/`
-4. Open PR with architecture impact notes and test evidence
-
-## License
-License will be added in a dedicated `LICENSE` file.
+## Constraints
+1. No dummy data
+2. No mock AI
+3. Real open-source models only
+4. LLM used only for reasoning/explanation, not raw detection

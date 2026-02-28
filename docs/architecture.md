@@ -1,32 +1,34 @@
-# Quietus AI Architecture
+# Quietus AI Multimodal Architecture
 
-## 1. System Overview
-Quietus AI is a multi-service distress detection platform with both text and real-time video intelligence.
+## 1. Overview
+Quietus AI is a real-time multimodal distress detection platform. It processes video, audio, and text in parallel and computes a fused risk score with an optional LLM explanation.
 
-Services:
-1. Frontend (`React + Vite + Tailwind`)
-2. Backend API (`Spring Boot`)
-3. Text AI Service (`FastAPI`)
-4. Vision Agent Service (`Stream Vision Agents SDK`)
-5. PostgreSQL (`system of record`)
+Core services:
+1. Frontend (`React + WebRTC`)
+2. Backend API Gateway (`Spring Boot`)
+3. Vision processing (`vision-agent-layer`, FastAPI + Vision Agents SDK + YOLO + emotion model)
+4. Audio processing (`audio-service`, FastAPI)
+5. NLP processing (`nlp-service`, FastAPI)
+6. PostgreSQL (`system of record`)
 
 ## 2. Service Communication
-1. Frontend -> Backend API over HTTPS (JWT)
-2. Backend -> Text AI over private network HTTP
-3. Backend -> Vision Agent service over private network HTTP/WebSocket integration boundary
-4. Vision Agent -> Backend internal ingestion endpoint for event writes
-5. Backend -> PostgreSQL for all persistent data
+1. Frontend -> Backend: HTTPS + JWT
+2. Backend -> Vision/Audio/NLP: internal async HTTP calls
+3. Backend -> PostgreSQL: transactional persistence for session + predictions + fusion + explanation
+4. Backend -> LLM provider (Gemini/OpenAI): reasoning only (post-fusion)
 
-All analytics are generated from persisted PostgreSQL records.
+## 3. Real-Time Flow
+1. User logs in and starts session.
+2. Frontend captures webcam + mic + optional typed text.
+3. Frontend sends 20-30 second chunk payload to backend.
+4. Backend fan-outs requests in parallel to vision/audio/nlp services.
+5. Backend runs weighted fusion from returned scores.
+6. Backend optionally calls LLM for structured explanation.
+7. Backend stores raw modality outputs + fused result + explanation.
+8. Frontend receives result target within 5-8s after chunk upload completes.
 
-## 3. Why This Architecture
-1. Separation of concerns enables parallel team execution.
-2. Text and video inference workloads scale independently.
-3. Backend remains source of business truth and security enforcement.
-4. Real-time events are ingested as durable records for reproducible analytics.
-
-## 4. Request/Response Path Summary
-1. User authenticates and gets JWT from Backend.
-2. User submits text or starts video monitoring session.
-3. Backend orchestrates AI calls and stores results.
-4. Admin dashboard reads only backend analytics APIs.
+## 4. Latency Strategy
+1. Parallel modality processing.
+2. Per-service timeout budget.
+3. Best-effort fusion with missing-modality reweighting.
+4. One retry for transient failures only.

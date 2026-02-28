@@ -20,43 +20,73 @@ CREATE TABLE user_roles (
   PRIMARY KEY (user_id, role_id)
 );
 
-CREATE TABLE analysis_records (
+CREATE TABLE sessions (
   id UUID PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  input_text TEXT NOT NULL,
-  source VARCHAR(32) NOT NULL,
-  predicted_label VARCHAR(16) NOT NULL,
-  confidence NUMERIC(5,4) NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
-  model_version VARCHAR(64) NOT NULL,
-  ai_processing_ms INTEGER NOT NULL CHECK (ai_processing_ms >= 0),
-  submitted_at TIMESTAMPTZ NOT NULL,
-  analyzed_at TIMESTAMPTZ NOT NULL,
-  request_id UUID UNIQUE NOT NULL
-);
-
-CREATE TABLE video_sessions (
-  id UUID PRIMARY KEY,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  stream_session_id VARCHAR(128) UNIQUE NOT NULL,
-  session_type VARCHAR(32) NOT NULL,
-  client_platform VARCHAR(32) NOT NULL,
   status VARCHAR(16) NOT NULL,
   started_at TIMESTAMPTZ NOT NULL,
   ended_at TIMESTAMPTZ NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE TABLE video_analysis_events (
+CREATE TABLE vision_predictions (
   id UUID PRIMARY KEY,
-  session_id UUID NOT NULL REFERENCES video_sessions(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  event_at TIMESTAMPTZ NOT NULL,
-  risk_level VARCHAR(16) NOT NULL,
+  session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  chunk_id UUID NOT NULL,
+  emotion VARCHAR(32) NOT NULL,
   confidence NUMERIC(5,4) NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
-  signals JSONB NOT NULL,
-  model_version VARCHAR(64) NOT NULL,
-  latency_ms INTEGER NOT NULL CHECK (latency_ms >= 0),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  distress_score NUMERIC(5,4) NOT NULL CHECK (distress_score >= 0 AND distress_score <= 1),
+  frames_processed INTEGER NOT NULL CHECK (frames_processed >= 0),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (session_id, chunk_id)
+);
+
+CREATE TABLE audio_predictions (
+  id UUID PRIMARY KEY,
+  session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  chunk_id UUID NOT NULL,
+  emotion VARCHAR(32) NOT NULL,
+  stress_score NUMERIC(5,4) NOT NULL CHECK (stress_score >= 0 AND stress_score <= 1),
+  confidence NUMERIC(5,4) NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (session_id, chunk_id)
+);
+
+CREATE TABLE text_predictions (
+  id UUID PRIMARY KEY,
+  session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  chunk_id UUID NOT NULL,
+  transcript TEXT NOT NULL,
+  risk_level VARCHAR(16) NOT NULL,
+  distress_probability NUMERIC(5,4) NOT NULL CHECK (distress_probability >= 0 AND distress_probability <= 1),
+  confidence NUMERIC(5,4) NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (session_id, chunk_id)
+);
+
+CREATE TABLE fusion_results (
+  id UUID PRIMARY KEY,
+  session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  chunk_id UUID NOT NULL,
+  final_risk VARCHAR(16) NOT NULL,
+  final_score NUMERIC(5,4) NOT NULL CHECK (final_score >= 0 AND final_score <= 1),
+  confidence NUMERIC(5,4) NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
+  modalities_used JSONB NOT NULL,
+  computed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (session_id, chunk_id)
+);
+
+CREATE TABLE llm_explanations (
+  id UUID PRIMARY KEY,
+  session_id UUID NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  chunk_id UUID NOT NULL,
+  summary TEXT NOT NULL,
+  key_signals JSONB NOT NULL,
+  recommended_action_level VARCHAR(32) NOT NULL,
+  explanation_confidence NUMERIC(5,4) NOT NULL CHECK (explanation_confidence >= 0 AND explanation_confidence <= 1),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (session_id, chunk_id)
 );
 
 CREATE TABLE audit_logs (
@@ -69,16 +99,17 @@ CREATE TABLE audit_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX idx_analysis_user_analyzed_at ON analysis_records (user_id, analyzed_at DESC);
-CREATE INDEX idx_analysis_label_analyzed_at ON analysis_records (predicted_label, analyzed_at);
-CREATE INDEX idx_analysis_analyzed_at ON analysis_records (analyzed_at);
+CREATE INDEX idx_sessions_user_started_at ON sessions (user_id, started_at DESC);
+CREATE INDEX idx_sessions_status_started_at ON sessions (status, started_at);
 
-CREATE INDEX idx_video_sessions_user_started_at ON video_sessions (user_id, started_at DESC);
-CREATE INDEX idx_video_sessions_status_started_at ON video_sessions (status, started_at);
+CREATE INDEX idx_vision_session_created_at ON vision_predictions (session_id, created_at DESC);
+CREATE INDEX idx_audio_session_created_at ON audio_predictions (session_id, created_at DESC);
+CREATE INDEX idx_text_session_created_at ON text_predictions (session_id, created_at DESC);
 
-CREATE INDEX idx_video_events_session_event_at ON video_analysis_events (session_id, event_at DESC);
-CREATE INDEX idx_video_events_risk_event_at ON video_analysis_events (risk_level, event_at);
-CREATE INDEX idx_video_events_event_at ON video_analysis_events (event_at);
+CREATE INDEX idx_fusion_session_computed_at ON fusion_results (session_id, computed_at DESC);
+CREATE INDEX idx_fusion_risk_computed_at ON fusion_results (final_risk, computed_at);
+
+CREATE INDEX idx_llm_session_created_at ON llm_explanations (session_id, created_at DESC);
 
 CREATE INDEX idx_audit_user_created_at ON audit_logs (user_id, created_at DESC);
 CREATE INDEX idx_audit_created_at ON audit_logs (created_at DESC);
