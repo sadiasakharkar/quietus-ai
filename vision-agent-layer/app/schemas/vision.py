@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 from pydantic import BaseModel, Field
 
@@ -17,6 +17,16 @@ class FaceDetection(BaseModel):
     bbox: BoundingBox
 
 
+class FaceEmotionPrediction(BaseModel):
+    frame_index: int
+    timestamp_ms: int
+    face_confidence: float = Field(ge=0.0, le=1.0)
+    bbox: BoundingBox
+    emotion: str
+    emotion_confidence: float = Field(ge=0.0, le=1.0)
+    emotion_probabilities: Dict[str, float]
+
+
 class VisionAnalyzeResponse(BaseModel):
     session_id: str
     chunk_id: str
@@ -25,4 +35,9 @@ class VisionAnalyzeResponse(BaseModel):
     frames_with_faces: int
     faces_detected_ratio: float = Field(ge=0.0, le=1.0)
     max_face_confidence: float = Field(ge=0.0, le=1.0)
+    top_emotion: str
+    top_emotion_confidence: float = Field(ge=0.0, le=1.0)
+    distress_score: float = Field(ge=0.0, le=1.0)
+    emotion_probabilities: Dict[str, float]
     face_detections: List[FaceDetection]
+    face_emotion_predictions: List[FaceEmotionPrediction]

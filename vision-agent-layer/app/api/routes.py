@@ -17,10 +17,13 @@ def health() -> dict:
 
 @router.get("/v1/models")
 def models() -> dict:
+    processor = get_video_processor()
     return {
         "vision": {
             "faceDetector": "YOLO",
-            "modelPath": settings.vision_yolo_model_path,
+            "faceModelPath": settings.vision_yolo_model_path,
+            "emotionModel": processor.emotion_classifier.model_version,
+            "distressEmotions": settings.distress_emotions_list(),
         }
     }
 
@@ -48,7 +51,7 @@ async def analyze_video(
         temp_path = temp_file.name
 
     try:
-        frames_processed, detections = processor.analyze_video(
+        result = processor.analyze_video(
             temp_path,
             frame_interval_ms=frame_interval_ms,
             max_frames=max_frames,
@@ -59,17 +62,22 @@ async def analyze_video(
         if os.path.exists(temp_path):
             os.remove(temp_path)
 
-    frames_with_faces = len({d.frame_index for d in detections})
-    ratio = (frames_with_faces / frames_processed) if frames_processed > 0 else 0.0
-    max_conf = max((d.confidence for d in detections), default=0.0)
+    frames_with_faces = len({d.frame_index for d in result.face_detections})
+    ratio = (frames_with_faces / result.frames_processed) if result.frames_processed > 0 else 0.0
+    max_conf = max((d.confidence for d in result.face_detections), default=0.0)
 
     return VisionAnalyzeResponse(
         session_id=session_id,
         chunk_id=chunk_id,
-        model_version=processor.detector.model_version,
-        frames_processed=frames_processed,
+        model_version=processor.model_version,
+        frames_processed=result.frames_processed,
         frames_with_faces=frames_with_faces,
         faces_detected_ratio=ratio,
         max_face_confidence=max_conf,
-        face_detections=detections,
+        top_emotion=result.top_emotion,
+        top_emotion_confidence=result.top_emotion_confidence,
+        distress_score=result.distress_score,
+        emotion_probabilities=result.emotion_probabilities,
+        face_detections=result.face_detections,
+        face_emotion_predictions=result.face_emotion_predictions,
     )
