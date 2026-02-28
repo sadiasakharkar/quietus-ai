@@ -22,6 +22,7 @@
 ## Phase 5: Fusion engine
 1. Weighted multimodal fusion.
 2. Missing-modality fallback logic.
+3. Persist fusion outputs per session chunk.
 
 ## Phase 6: LLM reasoning integration
 1. Structured reasoning prompt.
