@@ -2,6 +2,7 @@ package com.quietusai.api.controller;
 
 import com.quietusai.api.dto.*;
 import com.quietusai.application.service.FusionService;
+import com.quietusai.application.service.LlmExplanationService;
 import com.quietusai.security.service.AppUserPrincipal;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,9 +16,11 @@ import java.util.UUID;
 public class PredictionController {
 
     private final FusionService fusionService;
+    private final LlmExplanationService llmExplanationService;
 
-    public PredictionController(FusionService fusionService) {
+    public PredictionController(FusionService fusionService, LlmExplanationService llmExplanationService) {
         this.fusionService = fusionService;
+        this.llmExplanationService = llmExplanationService;
     }
 
     @PostMapping("/vision")
@@ -61,5 +64,21 @@ public class PredictionController {
                                           @PathVariable UUID sessionId,
                                           @PathVariable UUID chunkId) {
         return fusionService.getFusion(principal.getUserId(), sessionId, chunkId);
+    }
+
+    @PostMapping("/explain")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public LlmExplanationResponse explain(@AuthenticationPrincipal AppUserPrincipal principal,
+                                          @PathVariable UUID sessionId,
+                                          @PathVariable UUID chunkId) {
+        return llmExplanationService.generate(principal.getUserId(), sessionId, chunkId);
+    }
+
+    @GetMapping("/explanation")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public LlmExplanationResponse getExplanation(@AuthenticationPrincipal AppUserPrincipal principal,
+                                                 @PathVariable UUID sessionId,
+                                                 @PathVariable UUID chunkId) {
+        return llmExplanationService.get(principal.getUserId(), sessionId, chunkId);
     }
 }

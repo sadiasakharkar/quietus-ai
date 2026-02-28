@@ -107,7 +107,25 @@ Auth: USER/ADMIN
 ### GET /api/v1/sessions/{sessionId}/chunks/{chunkId}/fusion
 Auth: USER/ADMIN
 
-## 5. Error Contract
+### POST /api/v1/sessions/{sessionId}/chunks/{chunkId}/explain
+Auth: USER/ADMIN
+Response:
+```json
+{
+  "sessionId": "uuid",
+  "chunkId": "uuid",
+  "summary": "Consistent distress signals across available modalities.",
+  "keySignals": ["High distress score in text", "Sustained negative affect in vision"],
+  "recommendedActionLevel": "PRIORITY_REVIEW",
+  "explanationConfidence": 0.84,
+  "createdAt": "2026-02-28T11:10:00Z"
+}
+```
+
+### GET /api/v1/sessions/{sessionId}/chunks/{chunkId}/explanation
+Auth: USER/ADMIN
+
+## 6. Error Contract
 ```json
 {
   "timestamp": "2026-02-28T11:10:00Z",

@@ -27,6 +27,7 @@
 ## Phase 6: LLM reasoning integration
 1. Structured reasoning prompt.
 2. JSON explanation output persistence.
+3. Session chunk explain/get explanation APIs.
 
 ## Phase 7: Frontend UI + real-time capture
 1. React webcam + mic capture.
