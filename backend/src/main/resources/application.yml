@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: quietus-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/quietus}
+    username: ${SPRING_DATASOURCE_USERNAME:quietus}
+    password: ${SPRING_DATASOURCE_PASSWORD:quietus_dev_password}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        format_sql: true
+  flyway:
+    enabled: true
+
+server:
+  port: 8080
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:replace_with_long_random_secret}
+    expiration-seconds: ${JWT_EXPIRATION_SECONDS:3600}
+  ai:
+    base-url: ${TEXT_AI_BASE_URL:http://localhost:8000}
+    service-token: ${INTERNAL_SERVICE_TOKEN:replace_with_internal_service_token}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

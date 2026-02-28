@@ -1,0 +1,16 @@
+# Build outputs
+**/target/
+**/build/
+
+# Dependency directories
+**/node_modules/
+
+# Runtime and environment
+.env
+**/.env
+*.log
+
+# IDE and OS
+.DS_Store
+.idea/
+.vscode/
