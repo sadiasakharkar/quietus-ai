@@ -32,6 +32,7 @@
 ## Phase 7: Frontend UI + real-time capture
 1. React webcam + mic capture.
 2. Session controls and risk display.
+3. Vision/audio analysis, fusion, and explanation trigger flow.
 
 ## Phase 8: Dockerization and demo optimization
 1. Final container orchestration.

@@ -1,0 +1,26 @@
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 5173,
+    proxy: {
+      "/backend-api": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/backend-api/, "")
+      },
+      "/vision-api": {
+        target: "http://localhost:8100",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/vision-api/, "")
+      },
+      "/audio-api": {
+        target: "http://localhost:8200",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/audio-api/, "")
+      }
+    }
+  }
+});

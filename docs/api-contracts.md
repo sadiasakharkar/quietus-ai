@@ -125,6 +125,10 @@ Response:
 ### GET /api/v1/sessions/{sessionId}/chunks/{chunkId}/explanation
 Auth: USER/ADMIN
 
+## 5. Frontend Runtime Service Calls (Phase 7)
+1. `POST /vision-api/v1/vision/analyze` (Vite proxy to vision-agent-layer)
+2. `POST /audio-api/v1/audio/analyze` (Vite proxy to audio-service)
+
 ## 6. Error Contract
 ```json
 {
